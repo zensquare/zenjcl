@@ -100,16 +100,16 @@ public class Schedule {
                 new HourField("Hour", "1"),
                 new DayOfMonthField("Day of Month", "*"),
                 new MonthField("Month", "*"),
-                new DayOfWeekField("Day of Week", "*"),
+                new DayOfWeekField("Day of Week", "*",1,7),
                 new YearField("Year", "*")
-            };
+            }; 
         } else {
             fields = new ScheduleField[]{
                 new MinutesField("Minute", "1"),
                 new HourField("Hour", "1"),
                 new DayOfMonthField("Day of Month", "*"),
                 new MonthField("Month", "*"),
-                new DayOfWeekField("Day of Week", "*"),
+                new DayOfWeekField("Day of Week", "*",0,6),
                 new YearField("Year", "*")
             };
         }
@@ -251,12 +251,12 @@ public class Schedule {
     }
 
     public long nextValid(Calendar c) throws Exception {
-
+        int maxYear = GregorianCalendar.getInstance().get(Calendar.YEAR) + 100;
         boolean valid = false;
         while (!valid) {
             valid = true;
             for (int i = fields.length - 1; i >= 0; i--) {
-                if (i == FIELD_YEAR && !fields[FIELD_YEAR].getNextValid(c)) { //If we dont have a valid year we have failed, there is no next valid time
+                if (c.get(Calendar.YEAR) > maxYear || i == FIELD_YEAR && !fields[FIELD_YEAR].getNextValid(c)) { //If we dont have a valid year we have failed, there is no next valid time
                     return Long.MAX_VALUE;
                 }
                 if (!fields[i].getNextValid(c)) {
@@ -482,6 +482,7 @@ public class Schedule {
 
         }
 
+        @Override
         public void replace(FieldPart target, FieldPart replacement) {
             if (this.value == target) {
                 this.value = replacement;
@@ -490,6 +491,7 @@ public class Schedule {
             }
         }
 
+        @Override
         public String relation(FieldPart part) {
             if (this == part.parent) {
                 return "child";
@@ -604,25 +606,25 @@ public class Schedule {
     }
     public static final String[] DAYS_OF_WEEK = new String[]{"Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"};
 
-    public int dowStart() {
-        //System.out.println(format);
-        if (format == FORMAT_QUARTZ) {
-            return 1;
-        }
-        return 0;
-    }
-
-    public int dowEnd() {
-        if (format == FORMAT_QUARTZ) {
-            return 7;
-        }
-        return 6;
-    }
+//    public int dowStart() {
+//        //System.out.println(format);
+//        if (format == FORMAT_QUARTZ) {
+//            return 1;
+//        }
+//        return 0;
+//    }
+//
+//    public int dowEnd() {
+//        if (format == FORMAT_QUARTZ) {
+//            return 7;
+//        }
+//        return 6;
+//    }
 
     private class DayOfWeekField extends ScheduleField {
 
-        public DayOfWeekField(String name, String value) {
-            super(name, "day", "week", value, dowStart(), dowEnd());
+        public DayOfWeekField(String name, String value, int firstDOW, int lastDOW) {
+            super(name, "day", "week", value, firstDOW, lastDOW);
 
             in_on = "on ";
             prefix = "a ";
@@ -702,16 +704,19 @@ public class Schedule {
 
         @Override
         public boolean getNextValid(Calendar from) {
+            int daysInMonth = from.getActualMaximum(Calendar.DAY_OF_MONTH);
+            
             int date = from.get(Calendar.DAY_OF_MONTH);
             int next = value.nextValid(date);
-
-            if (next < date) {
+            
+            if (next < date || next > daysInMonth) {
                 return false;
             }
 
             if (next != date) {
                 from.set(from.get(Calendar.YEAR), from.get(Calendar.MONTH), next, 0, 0, 0);
             }
+            
             return true;
         }
 
@@ -761,11 +766,11 @@ public class Schedule {
 
         @Override
         public void roll(Calendar cal) {
-            cal.add(Calendar.MONTH, 1);
+            cal.set(Calendar.DAY_OF_MONTH, 1);
             cal.set(Calendar.SECOND, 0);
             cal.set(Calendar.MINUTE, 0);
             cal.set(Calendar.HOUR_OF_DAY, 0);
-            cal.set(Calendar.DAY_OF_MONTH, 1);
+            cal.add(Calendar.MONTH, 1);
         }
     }
 
@@ -803,7 +808,7 @@ public class Schedule {
             }
 
             if (next != year) {
-                from.set(next, Calendar.JANUARY, 1, 1, 0, 0);
+                from.set(next, Calendar.JANUARY, 0, 1, 0, 0);
             }
 
             return true;
@@ -815,7 +820,7 @@ public class Schedule {
         
         @Override
         public void roll(Calendar cal) {
-            cal.set(cal.get(Calendar.YEAR)+1, 1, 1, 0, 0, 0);
+            cal.set(cal.get(Calendar.YEAR)+1, 0, 1, 0, 0, 0);
         }
     }
 
