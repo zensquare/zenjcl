@@ -1,6 +1,8 @@
 # ZenJCL
 Zensquare Java Cron Library
 
+<img src="https://cloud.githubusercontent.com/assets/10903615/6095780/850bcf60-afbd-11e4-9d86-fd8a4eb1a561.png">
+
 ZenJCL is a lightweight scheduling library, it has been designed for those times
 when you simply need some piece of code to run on a given schedule.
 
